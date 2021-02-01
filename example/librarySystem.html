@@ -1,0 +1,76 @@
+<script src="./../simpletest.js"></script>
+<script src="librarySystem.js"></script>
+<script>
+  // Tests.
+  tests({
+    'It should create and return the library whithout dependencies': function() {
+      librarySystem('testLibrary', [], function() {
+        return 'test library';
+      });
+
+      var testLibrary = librarySystem('testLibrary');
+      eq(testLibrary, 'test library');
+    },
+    'It should handle dependencies, provided as the array elements in the second argument.': function() {
+      librarySystem('name', [], function() {
+        return 'Gordon';
+      });
+
+      librarySystem('company', [], function() {
+        return 'Watch and Code';
+      });
+
+      librarySystem('workBlurb', ['name', 'company'], function(name, company) {
+        return name + ' works at ' + company;
+      });
+
+      eq(librarySystem('workBlurb'), 'Gordon works at Watch and Code');
+    },
+    'It should deal with dependencies out of order.': function() {
+      librarySystem('testLibWithDeps', ['dependency1', 'dependency2'], function(dependency1, dependency2) {
+        return 'Demo library with two dependencies: ' + dependency1 + ', ' + dependency2;
+      });
+
+      librarySystem('dependency1', [], function() {
+        return 'First helper library';
+      });
+
+      librarySystem('dependency2', [], function() {
+        return 'Second helper library';
+      });
+
+      eq(librarySystem('testLibWithDeps'), 'Demo library with two dependencies: First helper library, Second helper library');
+    },
+    'It should run the callback only once for each library.': function() {
+      var numberOfTimesCallbackHasRun = 0;
+
+      librarySystem('fullName', ['first', 'second'], function(first, second) {
+        numberOfTimesCallbackHasRun++;
+        return 'Full name is: ' + first + ' ' + second;
+      });
+
+      // Lets try to use the library before 1st dependency loaded.
+      librarySystem('fullName');
+
+      // Create first helper library.
+      librarySystem('first', [], function() {
+        return 'Mik';
+      });
+
+      // Lets try to use the library before 2st dependency loaded.
+      librarySystem('fullName');
+
+      // Create second helper library.
+      librarySystem('second', [], function() {
+        return 'Rou';
+      });
+
+      // Lets use workBlurb library few times.
+      librarySystem('fullName');
+      librarySystem('fullName');
+      librarySystem('fullName');
+
+      eq(numberOfTimesCallbackHasRun, 1);
+    }
+  });
+</script>

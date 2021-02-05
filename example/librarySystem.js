@@ -85,8 +85,8 @@ librarySystem('workBlurb'); // 'Gordon works at Watch and Code'
       // If library not loaded yet
       if (!libraryStorage[libraryName]) {
         // Get dependencies and callback from the storage.
-        var dependencies = libraryStorage.dependencies;
-        var callback = libraryStorage.callback;
+        dependencies = libraryStorage.dependencies;
+        callback = libraryStorage.callback;
 
         // Make an attempt to create the library (it will if all dependencies loaded).
         librarySystem(libraryName, dependencies, callback);

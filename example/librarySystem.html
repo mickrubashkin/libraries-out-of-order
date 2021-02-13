@@ -1,6 +1,12 @@
 <script src="./../simpletest.js"></script>
-<script src="librarySystem.js"></script>
+<script src="./librarySystem.js"></script>
 <script>
+
+  // Helper function
+  function cleanStorage() {
+    librarySystem('clean');
+  }
+
   // Tests.
   tests({
     'It should create and return the library whithout dependencies': function() {
@@ -10,6 +16,8 @@
 
       var testLibrary = librarySystem('testLibrary');
       eq(testLibrary, 'test library');
+
+      cleanStorage();
     },
     'It should handle dependencies, provided as the array elements in the second argument.': function() {
       librarySystem('name', [], function() {
@@ -25,6 +33,8 @@
       });
 
       eq(librarySystem('workBlurb'), 'Gordon works at Watch and Code');
+
+      cleanStorage();
     },
     'It should deal with dependencies out of order.': function() {
       librarySystem('testLibWithDeps', ['dependency1', 'dependency2'], function(dependency1, dependency2) {
@@ -40,6 +50,8 @@
       });
 
       eq(librarySystem('testLibWithDeps'), 'Demo library with two dependencies: First helper library, Second helper library');
+
+      cleanStorage();
     },
     'It should run the callback only once for each library.': function() {
       var numberOfTimesCallbackHasRun = 0;
@@ -71,6 +83,23 @@
       librarySystem('fullName');
 
       eq(numberOfTimesCallbackHasRun, 1);
+
+      cleanStorage();
+    },
+    'It should handle dependencies with dependencies': function() {
+      librarySystem('Bob', ['Alice'], function(name) {
+        return 'Bob loves Alice, ' + name;
+      });
+
+      librarySystem('Alice', ['Jake'], function(name) {
+        return 'Alice loves Jake, ' + name;
+      });
+
+      librarySystem('Jake', [], function() {
+        return 'Jake loves tacos';
+      });
+
+      eq(librarySystem('Bob'), 'Bob loves Alice, Alice loves Jake, Jake loves tacos');
     }
   });
 </script>

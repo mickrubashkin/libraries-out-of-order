@@ -1,29 +1,52 @@
 (function() {
 
   var libraryStorage = {};
-  var unresolvedLibraries = {};
+  var resolve = {};
 
   function librarySystem(libraryName, dependencies, callback) {
+    // Helper
+    if (libraryName === 'clean') {
+      libraryStorage = {};
+      return;
+    }
 
     // Create library
     if (arguments.length > 1) {
-      var resolved = true;
+      var dependenciesLoaded = true;
+
       var callbackArgs = dependencies.map(function(dependency) {
-        // if !libStorage[dp] resolved = false
-        // return resolveLib(dp)
+        dependenciesLoaded = false;
+
+        if (libraryStorage[dependency]) {
+          dependenciesLoaded = true;
+        }
+
+        if (resolve[dependency]) {
+          libraryStorage[dependency] = resolve[dependency]();
+          dependenciesLoaded = true;
+        }
+
+        dependenciesLoaded = libraryStorage[dependency];
+
+        return libraryStorage[dependency];
       });
 
-      // if (resolved) libStorage[lib] = cb.apply(null, cbArgs);
-      // else unresolvedLibs[libName] = [dps, cb];
+      if (dependenciesLoaded) {
+        libraryStorage[libraryName] = callback.apply(null, callbackArgs);
+      } else {
+        resolve[libraryName] = function() {
+          librarySystem(libraryName, dependencies, callback);
+          return libraryStorage[libraryName];
+        };
+      }
 
-    } else if (!libraryStorage[libraryName]) {
-      var dps = 'TBD';
-      var cb = 'TBD';
-
-      librarySystem(libraryName, dps, cb);
-
+      // Use library
     } else {
-      return libraryStorage[libraryName];
+      if (libraryStorage[libraryName]) {
+        return libraryStorage[libraryName];
+      } else {
+        return resolve[libraryName]();
+      }
     }
   }
 

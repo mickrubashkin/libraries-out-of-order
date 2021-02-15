@@ -40,6 +40,10 @@ librarySystem('workBlurb'); // 'Gordon works at Watch and Code'
  * It should handle dependencies, provided as the array elements in the second argument.
  * It should deal with dependencies out of order.
  * It should run the callback only once for each library.
+ *
+ * It should not fail when trying to use a library before dependencies loaded.
+ * It should throw error if tryig to use a library first.
+ * It should handle dependencies with dependencies.
 */
 
 // Implementation.
@@ -47,54 +51,38 @@ librarySystem('workBlurb'); // 'Gordon works at Watch and Code'
   var libraryStorage = {};
 
   function librarySystem(libraryName, dependencies, callback) {
-    // Helper
-    if (libraryName === 'clean') {
-      libraryStorage = {};
-      return;
-    }
 
-    // 1. Creating the library.
+    // Create library
     if (arguments.length > 1) {
+      libraryStorage[libraryName] = {
+        dependencies: dependencies,
+        callback: callback,
+        notLoaded: true
+      };
 
-      // Check if all dependencies have been loaded.
-      var dependenciesLoaded = dependencies.every(function(dependency) {
-        return libraryStorage.hasOwnProperty(dependency);
-      });
+      // Use library
+    } else {
+      var lib = libraryStorage[libraryName];
+      var result;
 
-      // If all dependencies loaded, create library
-      if (dependenciesLoaded) {
-
-        var dependencyLibraries = dependencies.map(function(dependency) {
-          if (libraryStorage[dependency].unresolved) {
-            var unresolvedLibrary = libraryStorage[dependency];
-            var deps = unresolvedLibrary.dependencies;
-            var cb = unresolvedLibrary.callback;
-
-            librarySystem(dependency, deps, cb);
-          }
-          return libraryStorage[dependency];
-        });
-
-        libraryStorage[libraryName] = callback.apply(null, dependencyLibraries);
-
-        // If any dependency not loaded, create library and mark it unresolved
-      } else {
-        libraryStorage[libraryName] = {
-          unresolved: true,
-          dependencies: dependencies,
-          callback: callback
-        };
+      // If library is not stored, throw error
+      if (!lib) {
+        throw new Error('Not loaded dependency: ' + libraryName);
       }
 
-      // 2. Using the library.
-    } else {
-      // If library is not resolved - resolve, then return it.
-      if (libraryStorage[libraryName].unresolved) {
-        var unresolvedLibrary = libraryStorage[libraryName];
-        var deps = unresolvedLibrary.dependencies;
-        var cb = unresolvedLibrary.callback;
+      if (lib.notLoaded) {
 
-        librarySystem(libraryName, deps, cb);
+        // Wrap the code in the try-catch to not fail when trying to use a library with unloaded dependencies
+        try {
+          var cbArgs = lib.dependencies.map(function(dependency) {
+            return librarySystem(dependency);
+          });
+
+          result = lib.callback.apply(null, cbArgs);
+          libraryStorage[libraryName] = result;
+        } catch (e) {
+          console.log(e);
+        }
       }
 
       return libraryStorage[libraryName];

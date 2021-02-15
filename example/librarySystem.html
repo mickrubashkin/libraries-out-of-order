@@ -1,24 +1,16 @@
 <script src="./../simpletest.js"></script>
-<!-- <script src="./librarySystem.js"></script> -->
-<script src="./experiments.js"></script>
+<script src="./librarySystem.js"></script>
 <script>
-
-  // Helper function
-  function cleanStorage() {
-    librarySystem('clean');
-  }
 
   // Tests.
   tests({
-    'It should create and return the library whithout dependencies': function() {
+    'It should handle a library whithout dependencies': function() {
       librarySystem('testLibrary', [], function() {
         return 'test library';
       });
 
       var testLibrary = librarySystem('testLibrary');
       eq(testLibrary, 'test library');
-
-      cleanStorage();
     },
     'It should handle dependencies, provided as the array elements in the second argument.': function() {
       librarySystem('name', [], function() {
@@ -34,10 +26,19 @@
       });
 
       eq(librarySystem('workBlurb'), 'Gordon works at Watch and Code');
-
-      cleanStorage();
     },
-    'It should deal with dependencies out of order.': function() {
+    'It should handle a library with dependency out of order.': function() {
+      librarySystem('app', ['dependency'], function(dependency) {
+        return 'app with ' + dependency;
+      });
+
+      librarySystem('dependency', [], function() {
+        return 'dependency';
+      });
+
+      eq(librarySystem('app'), 'app with dependency');
+    },
+    'It should handle a library with dependencies out of order.': function() {
       librarySystem('testLibWithDeps', ['dependency1', 'dependency2'], function(dependency1, dependency2) {
         return 'Demo library with two dependencies: ' + dependency1 + ', ' + dependency2;
       });
@@ -51,8 +52,30 @@
       });
 
       eq(librarySystem('testLibWithDeps'), 'Demo library with two dependencies: First helper library, Second helper library');
+    },
+    'It should throw error if tryig to use a library first.': function() {
+      var isError = false;
 
-      cleanStorage();
+      try {
+        librarySystem('test');
+      } catch (e) {
+        isError = true;
+      }
+
+      eq(isError, true);
+    },
+    'It should not fail when trying to use a library before dependencies loaded.': function() {
+      librarySystem('app', ['dependency'], function(dependency) {
+        return 'app with ' + dependency;
+      });
+
+      librarySystem('app');
+
+      librarySystem('dependency', [], function() {
+        return 'dependency';
+      });
+
+      eq(librarySystem('app'), 'app with dependency');
     },
     'It should run the callback only once for each library.': function() {
       var numberOfTimesCallbackHasRun = 0;
@@ -67,7 +90,7 @@
 
       // Create first helper library.
       librarySystem('first', [], function() {
-        return 'Mik';
+        return 'Mick';
       });
 
       // Lets try to use the library before 2st dependency loaded.
@@ -75,19 +98,17 @@
 
       // Create second helper library.
       librarySystem('second', [], function() {
-        return 'Rou';
+        return 'Rubashkin';
       });
 
-      // Lets use workBlurb library few times.
+      // Lets use fullName library few times.
       librarySystem('fullName');
       librarySystem('fullName');
       librarySystem('fullName');
 
       eq(numberOfTimesCallbackHasRun, 1);
-
-      cleanStorage();
     },
-    'It should handle dependencies with dependencies': function() {
+    'It should handle dependencies with dependencies.': function() {
       librarySystem('Bob', ['Alice'], function(name) {
         return 'Bob loves Alice, ' + name;
       });
